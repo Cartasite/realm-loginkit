@@ -382,7 +382,7 @@ public class LoginViewController: UIViewController {
         loginView.footerView.isSubmitButtonEnabled = isFormValid
     }
 
-    private func submitLoginRequest() {
+    func submitLoginRequest() {
         // Show the spinner view on the login button
         loginView.footerView.isSubmitting = true
 
@@ -408,6 +408,7 @@ public class LoginViewController: UIViewController {
 
                     // Inform the parent that the login was successful
                     self.loginSuccessfulHandler?(user!)
+                    self.loginView.footerView.isSubmitting = false
                 }
             })
         }

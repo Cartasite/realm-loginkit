@@ -76,9 +76,17 @@ public class AWSCognitoAuthenticationProvider: NSObject, AuthenticationProvider,
         }
     }
 
+    
     private func registerNewAccount(onCompletion: ((RLMSyncCredentials?, Error?) -> Void)?) {
         // Any additional, potentially required attributes submitted along with the username and password credentials
-        let attributes = [AWSCognitoIdentityUserAttributeType(name: "email", value: username!)]
+        var altAttribute : AWSCognitoIdentityUserAttributeType
+        if(username!.hasPrefix("+1") && username!.characters.count == 12){
+            altAttribute = AWSCognitoIdentityUserAttributeType(name:"phone_number", value: username!)
+        }else{ // todo check for @ and c
+            altAttribute = AWSCognitoIdentityUserAttributeType(name:"email", value: username!)
+        }
+        
+        let attributes = [altAttribute]
 
         // The block called when the response from the user session request is complete
         let getUserSessionBlock: ((AWSTask<AWSCognitoIdentityUserSession>) -> Void) = { task in
@@ -88,6 +96,8 @@ public class AWSCognitoAuthenticationProvider: NSObject, AuthenticationProvider,
             }
 
             let session = task.result!
+            onCompletion?(nil, nil)
+            self.logIntoExistingAccount(onCompletion: onCompletion) // todo - auto login flag
             print("Access token is \(session.accessToken!). Please 'confirm' user from the dashboard to continue.")
         }
 
@@ -99,19 +109,25 @@ public class AWSCognitoAuthenticationProvider: NSObject, AuthenticationProvider,
             }
 
             let response = task.result!
+            
             response.user.getSession().continueWith(block: { task -> Any? in
                 DispatchQueue.main.async { getUserSessionBlock(task) }
                 return nil
             }, cancellationToken: self.cancellationTokenSource!.token)
         }
-
+        
         // Make the initial signup request to the Cognito User Pool
-        self.userPool.signUp(username!, password: password!, userAttributes: attributes, validationData: nil).continueWith(block: { task -> Any? in
+        let personId = UUID().uuidString
+        
+        self.userPool.signUp(personId, password: password!, userAttributes: attributes, validationData: nil).continueWith(block: { task -> Any? in
             DispatchQueue.main.async { signUpBlock(task) }
             return nil
         }, cancellationToken: cancellationTokenSource!.token)
     }
 
+    
+    
+    
     private func logIntoExistingAccount(onCompletion: ((RLMSyncCredentials?, Error?) -> Void)?) {
         // Set up the block that will be called when we get a response from the server
         let getUserSessionBlock: ((AWSTask<AWSCognitoIdentityUserSession>) -> Void) = { task in
@@ -135,6 +151,8 @@ public class AWSCognitoAuthenticationProvider: NSObject, AuthenticationProvider,
         }, cancellationToken: cancellationTokenSource!.token)
     }
 
+    
+    
     // Cognito returns the error message in a "message" property in
     // 'userInfo'. This method copies that string to 'localizedDescription' 
     // for easier access
@@ -143,4 +161,29 @@ public class AWSCognitoAuthenticationProvider: NSObject, AuthenticationProvider,
         userInfo[NSLocalizedDescriptionKey] = userInfo["message"]
         return NSError(domain: error.domain, code: error.code, userInfo: userInfo)
     }
+    
+
+    public func startPasswordAuthentication() -> AWSCognitoIdentityPasswordAuthentication {
+        return self;
+    }
 }
+
+
+extension AWSCognitoAuthenticationProvider : AWSCognitoIdentityPasswordAuthentication{
+    
+    public func getDetails(_ authenticationInput: AWSCognitoIdentityPasswordAuthenticationInput, passwordAuthenticationCompletionSource: AWSTaskCompletionSource<AWSCognitoIdentityPasswordAuthenticationDetails>){
+        debugPrint("getDetails:  \(authenticationInput) \n\(passwordAuthenticationCompletionSource)")
+        let result = AWSCognitoIdentityPasswordAuthenticationDetails(username: username!,
+                                                                     password: password!);
+        passwordAuthenticationCompletionSource.set(result: result);
+    }
+    
+    /**
+     This step completed, usually either display an error to the end user or dismiss ui
+     @param error the error if any that occured
+     */
+    public func didCompleteStepWithError(_ error: Error?){
+        
+    }
+}
+

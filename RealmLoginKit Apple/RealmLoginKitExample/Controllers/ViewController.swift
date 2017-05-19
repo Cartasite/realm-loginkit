@@ -17,6 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 import RealmLoginKit
+import Realm
 import UIKit
 
 class ViewController: UIViewController {
@@ -42,6 +43,7 @@ class ViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        debugPrint("FARTS: \(RLMSyncUser.__current())")
     }
     
     func segmentedControlChanged() {
@@ -60,14 +62,20 @@ class ViewController: UIViewController {
          and make sure to swap out the commented out lines, making sure the `pod 'RealmLoginKit/AWSCognito` line is uncommented,
          and then run another `pod install` command.
          */
-
-//        loginViewController.authenticationProvider = AWSCognitoAuthenticationProvider(serviceRegion: .USEast1, userPoolID: "",
-//                                                                                      clientID: "",
-//                                                                                      clientSecret: "")
+        
+        loginViewController.authenticationProvider = AWSCognitoAuthenticationProvider(serviceRegion: .USEast1, userPoolID: "us-east-1_KkoAr6Jg0",
+                                                                                      clientID: "5dm92mbtgkvu591d1lqiu0c7ou",
+                                                                                      clientSecret: "1tb249utvsfcuaub3hurchhn14r5fq4lfq70ttc2ltbc2l939ten")
+        
         loginViewController.isCancelButtonHidden = false
+        
         loginViewController.loginSuccessfulHandler = { user in
+            if(loginViewController.isRegistering){
+                loginViewController.isRegistering = false
+            }
             loginViewController.presentingViewController?.dismiss(animated: true, completion: nil)
         }
+        
         present(loginViewController, animated: true, completion: nil)
     }
 }

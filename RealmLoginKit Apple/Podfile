@@ -7,7 +7,7 @@ def shared_pods
   pod 'RealmLoginKit', :path => 'RealmLoginKit.podspec'
 
   # Uncomment this line if you want to enable the AWS Cognito features of RealmLoginKit
-  # pod 'RealmLoginKit/AWSCognito', :path => 'RealmLoginKit.podspec'
+   pod 'RealmLoginKit/AWSCognito', :path => 'RealmLoginKit.podspec'
 
   # Client-side component of http://revealapp.com used for UI debugging
   # pod 'Reveal-SDK', :configurations => ['Debug']
